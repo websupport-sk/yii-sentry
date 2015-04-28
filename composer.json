@@ -3,7 +3,7 @@
     "description": "Layer for Yii framework for communication with Sentry logging API",
     "keywords": ["yii", "sentry", "api", "logging"],
     "require": {
-        "raven/raven": "~0.11",
+        "raven/raven": "0.11",
         "yiisoft/yii": "~1.1"
     },
     "license": "MIT",
