@@ -33,7 +33,6 @@ use Raven_Client;
  */
 class Client extends CApplicationComponent
 {
-    
     /**
      * Sentry DSN value
      * @var string
@@ -46,7 +45,7 @@ class Client extends CApplicationComponent
      * @see https://github.com/getsentry/raven-php#configuration
      */
     public $options = array();
-    
+
     /**
      * If logging should be performed. This can be useful if running under
      * development/staging
@@ -59,7 +58,7 @@ class Client extends CApplicationComponent
      * @var \Raven_Client
      */
     private $_client = false;
-    
+
     /**
      * Initializes the RSentryClient component.
      * @return void
@@ -73,7 +72,7 @@ class Client extends CApplicationComponent
             }
         }
     }
-    
+
     /**
      * Returns true if Yii debug is turned on, false otherwise.
      * @return boolean true if Yii debug is turned on, false otherwise.
@@ -82,7 +81,7 @@ class Client extends CApplicationComponent
     {
         return defined('YII_DEBUG') && YII_DEBUG === true;
     }
-    
+
     /**
      * Returns the Raven_Client
      * @return \Raven_Client The Raven_Client if this component is initialised, 

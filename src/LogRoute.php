@@ -16,6 +16,9 @@
 namespace Tatarko\YiiSentry;
 
 use CLogRoute;
+use Yii;
+use CLogger;
+use Raven_ErrorHandler;
 
 
 /**
@@ -80,14 +83,14 @@ class LogRoute extends CLogRoute
                 'handleError'
                 )
             );
-            
+
             $this->_errorHandler = new Raven_ErrorHandler(
                 $this->getClient()->getRavenClient()
             );
             $this->_errorHandler->registerShutdownFunction();
         }
     }
-    
+
     /**
      * Send log messages to Sentry.
      * 
@@ -110,8 +113,8 @@ class LogRoute extends CLogRoute
 
             $format = explode("\n", $log[0]);
             $title = strip_tags($format[0]);
-            
-            $ident = $sentry->captureMessage(
+
+            $sentry->captureMessage(
                 $title,
                 array(
                     'extra'=>array(
@@ -172,7 +175,7 @@ class LogRoute extends CLogRoute
 
         return true;
     }
-    
+
     /**
      * Returns the RSentryClient which should send the data.
      * It ensure RSentryClient application component exists and is initialised.
@@ -190,7 +193,7 @@ class LogRoute extends CLogRoute
                 $this->_client = false;
             } else {
                 $sentry = Yii::app()->{$this->sentryComponent};
-                
+
                 if (!$sentry || !$sentry->getIsInitialized()) {
                     Yii::log(
                         "'$this->sentryComponent' not initialised", 
@@ -202,8 +205,7 @@ class LogRoute extends CLogRoute
                 }
             }
         }
-        
+
         return $this->_client;
     }
 }
-?>
