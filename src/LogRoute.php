@@ -48,6 +48,12 @@ class LogRoute extends CLogRoute
     public $ravenLogCategory = 'raven';
 
     /**
+     * Local store for last event's ID
+     * @var string
+     */
+    public $eventId;
+
+    /**
      * Sentry client
      * @var Client
      */
@@ -143,7 +149,8 @@ class LogRoute extends CLogRoute
             return false;
         }
 
-        $this->_errorHandler->handleException($event->exception);        
+        $this->_errorHandler->handleException($event->exception);
+        $this->eventId = $event->exception->event_id;
         if ($lastError = $sentry->getLastError()) {
             Yii::log($lastError, CLogger::LEVEL_ERROR, $this->ravenLogCategory);
         }
