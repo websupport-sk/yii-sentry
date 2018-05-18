@@ -1,35 +1,15 @@
 <?php
 
-/**
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- *
- * PHP Version 5.3
- *
- * @category Logging
- * @package  YiiSentry
- * @author   Tomáš Tatarko <tomas@tatarko.sk>
- * @license  http://choosealicense.com/licenses/mit/ MIT
- * @link     https://github.com/tatarko/yii-sentry Official repository
- */
-
-namespace Tatarko\YiiSentry;
+namespace Websupport\YiiSentry;
 
 use CApplicationComponent;
 use Raven_Client;
-
-
+use Raven_ErrorHandler;
+use \CApplication;
 /**
- * Sentry Client application component
- *
- * Layer for Yii framework for communication with Sentry logging API
- *
- * @category      Logging
- * @package       YiiSentry
- * @author        Tomáš Tatarko <tomas@tatarko.sk>
- * @license       http://choosealicense.com/licenses/mit/ MIT
- * @link          https://github.com/tatarko/yii-sentry Official repository
- * @property-read \Raven_Client $ravenClient The Raven_Client instance
+ * Class Client
+ * @package Websupport\YiiSentry
+ * @property-read string|null eventId
  */
 class Client extends CApplicationComponent
 {
@@ -42,7 +22,7 @@ class Client extends CApplicationComponent
     /**
      * Raven_Client options
      * @var array
-     * @see https://github.com/getsentry/raven-php#configuration
+     * @see https://docs.sentry.io/clients/php/config/
      */
     public $options = array();
 
@@ -57,7 +37,18 @@ class Client extends CApplicationComponent
      * Stored sentry client connection
      * @var \Raven_Client
      */
-    private $_client = false;
+    private $sentry = null;
+
+    /**
+     * Sentry error handler
+     * @var Raven_ErrorHandler
+     */
+    private $errorHandler;
+
+//    /**
+//     * @var callable
+//     */
+//    private $previousHandler;
 
     /**
      * Initializes the RSentryClient component.
@@ -65,79 +56,69 @@ class Client extends CApplicationComponent
      */
     public function init()
     {
-        if ($this->enabled) {
-            parent::init();
-            if ($this->_client === false) {
-                $this->_client = new Raven_Client($this->dsn, $this->options);
-            }
-        }
-    }
+        parent::init();
 
-    /**
-     * Returns true if Yii debug is turned on, false otherwise.
-     * @return boolean true if Yii debug is turned on, false otherwise.
-     */
-    protected function isDebugMode() 
-    {
-        return defined('YII_DEBUG') && YII_DEBUG === true;
-    }
-
-    /**
-     * Returns the Raven_Client
-     * @return \Raven_Client The Raven_Client if this component is initialised, 
-     * false otherwise.
-     */
-    public function getRavenClient() 
-    {
-        return $this->_client;
+        $this->sentry = new Raven_Client($this->dsn, $this->options);
+        $this->errorHandler = new Raven_ErrorHandler($this->sentry);
+        $this->errorHandler->registerErrorHandler(true, ~error_reporting());
+        $this->errorHandler->registerExceptionHandler(true);
+        $this->errorHandler->registerShutdownFunction();
     }
 
     /**
      * Log a message to sentry
      *
-     * @param string  $message          Message to log
-     * @param array   $params           Parameters to post
-     * @param array   $level_or_options Options
-     * @param boolean $stack            Stack sending of this message?
-     * @param array   $vars             Additional vars
-     *
-     * @return integer Captured event ID
+     * @param string     $message The message (primary description) for the event.
+     * @param array      $params  params to use when formatting the message.
+     * @param array      $data    Additional attributes to pass with this event (see Sentry docs).
+     * @param bool|array $stack
+     * @param mixed      $vars
+     * @return string|null
      */
-    public function captureMessage(
-        $message,
-        $params = array(),
-        $level_or_options=array(),
-        $stack=false,
-        $vars = null
-    ) {
-        return $this->_client->captureMessage(
-            $message,
-            $params,
-            $level_or_options,
-            $stack,
-            $vars
-        );
+    public function captureMessage($message, $params = array(), $data = array(), $stack = false, $vars = null)
+    {
+        return $this->sentry->captureMessage($message, $params,  $data, $stack, $vars);
     }
 
     /**
-     * Given an identifier, returns a Sentry searchable string.
-     * @param integer $ident Unique identifier
-     * @return string
+     * Log an exception to sentry
+     *
+     * @param \Throwable|\Exception $exception The Throwable/Exception object.
+     * @param array                 $data      Additional attributes to pass with this event (see Sentry docs).
+     * @param mixed                 $logger
+     * @param mixed                 $vars
+     * @return string|null
      */
-    public function getIdent($ident)
+    public function captureException($exception, $data = null, $logger = null, $vars = null)
     {
-        return $this->_client->getIdent($ident);
+        return $this->sentry->captureException($exception, $data, $logger, $vars);
     }
-
 
     /**
      * Returns the request response from sentry if and only if the last message
      * was not sent successfully.
-     * 
+     *
      * @return mixed Last error
      */
-    public function getLastError()
+    public function getEventId()
     {
-        return $this->_client->getLastError();
+        return $this->sentry->getLastEventID();
     }
+
+    /**
+     * @param $type
+     * @param $message
+     * @param string $file
+     * @param int $line
+     * @param array $context
+     * @return bool|mixed
+     */
+//    public function handleError($type, $message, $file = '', $line = 0, $context = array())
+//    {
+//        if (error_reporting() & $type) {
+//            return call_user_func_array($this->previousHandler, array($type, $message, $file, $line, $context));
+//        }
+//
+//        return false;
+//    }
 }
