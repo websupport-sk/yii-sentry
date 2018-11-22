@@ -50,8 +50,9 @@ class LogRoute extends CLogRoute
              */
             list($message, $level, $category, $timestamp) = $log;
 
-            if (stristr($message, 'Stack trace:') !== false) {
-                continue;
+            // remove stack trace from message
+            if (($pos = strpos($message, 'Stack trace:')) !== false) {
+                $message = substr($message, 0, $pos);
             }
 
             $this->eventId = $this->client->captureMessage(
