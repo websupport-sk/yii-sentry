@@ -8,9 +8,8 @@ use Yii;
 class LogRoute extends CLogRoute
 {
     /**
-     * Component ID of the sentry client that should be used to
-     * send the logs
-     * @var string  
+     * Component ID of the sentry client that should be used to send the logs
+     * @var string
      */
     public $sentryId = 'sentry';
 
@@ -21,22 +20,15 @@ class LogRoute extends CLogRoute
     public $eventId;
 
     /**
-     * @var string
-     */
-    public $levels;
-
-    /**
      * Sentry client
      * @var Client
      */
     private $client;
 
     /**
-     * Initializes the route.
-     * This method is invoked after the route is created by the route manager.
-     * @return void
+     * @inheritdoc
      */
-    public function init() 
+    public function init()
     {
         parent::init();
         $this->client = Yii::app()->getComponent($this->sentryId);
@@ -44,19 +36,18 @@ class LogRoute extends CLogRoute
 
     /**
      * Send log messages to Sentry.
-     * 
-     * @param array $logs List of log messages.
+     *
+     * @inheritdoc
      */
-    protected function processLogs($logs) 
+    protected function processLogs($logs)
     {
-        /*
-         *   [0] => message (string)
-         *   [1] => level (string)
-         *   [2] => category (string)
-         *   [3] => timestamp (float, obtained by microtime(true));
-         */
-
         foreach ($logs as $log) {
+            /**
+             * @var string $message
+             * @var string $level
+             * @var string $category
+             * @var float $timestamp
+             */
             list($message, $level, $category, $timestamp) = $log;
 
             if (stristr($message, 'Stack trace:') !== false) {
@@ -68,8 +59,8 @@ class LogRoute extends CLogRoute
                 array(),
                 array(
                     'level' => $level,
-                    'timestamp'=> $timestamp,
-                    'extra'=>array(
+                    'timestamp' => $timestamp,
+                    'extra' => array(
                         'category' => $category,
                     ),
                 )
