@@ -95,12 +95,11 @@ class Client extends CApplicationComponent
     }
 
     /**
-     * Returns the request response from sentry if and only if the last message
-     * was not sent successfully.
+     * Return the last captured event's ID or null if none available.
      *
-     * @return mixed Last error
+     * @return string|null
      */
-    public function getEventId()
+    public function getLastEventId()
     {
         return $this->sentry->getLastEventID();
     }
