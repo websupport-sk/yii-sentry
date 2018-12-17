@@ -5,11 +5,11 @@ namespace Websupport\YiiSentry;
 use CApplicationComponent;
 use Raven_Client;
 use Raven_ErrorHandler;
-use \CApplication;
+
 /**
  * Class Client
  * @package Websupport\YiiSentry
- * @property-read string|null eventId
+ * @property-read string|null $lastEventId
  */
 class Client extends CApplicationComponent
 {
@@ -29,7 +29,7 @@ class Client extends CApplicationComponent
     /**
      * If logging should be performed. This can be useful if running under
      * development/staging
-     * @var boolean 
+     * @var boolean
      */
     public $enabled = true;
 
@@ -37,7 +37,7 @@ class Client extends CApplicationComponent
      * Stored sentry client connection
      * @var \Raven_Client
      */
-    private $sentry = null;
+    private $sentry;
 
     /**
      * Sentry error handler
@@ -45,13 +45,8 @@ class Client extends CApplicationComponent
      */
     private $errorHandler;
 
-//    /**
-//     * @var callable
-//     */
-//    private $previousHandler;
-
     /**
-     * Initializes the RSentryClient component.
+     * Initializes the SentryClient component.
      * @return void
      */
     public function init()
@@ -77,7 +72,7 @@ class Client extends CApplicationComponent
      */
     public function captureMessage($message, $params = array(), $data = array(), $stack = false, $vars = null)
     {
-        return $this->sentry->captureMessage($message, $params,  $data, $stack, $vars);
+        return $this->sentry->captureMessage($message, $params, $data, $stack, $vars);
     }
 
     /**
@@ -103,21 +98,4 @@ class Client extends CApplicationComponent
     {
         return $this->sentry->getLastEventID();
     }
-
-    /**
-     * @param $type
-     * @param $message
-     * @param string $file
-     * @param int $line
-     * @param array $context
-     * @return bool|mixed
-     */
-//    public function handleError($type, $message, $file = '', $line = 0, $context = array())
-//    {
-//        if (error_reporting() & $type) {
-//            return call_user_func_array($this->previousHandler, array($type, $message, $file, $line, $context));
-//        }
-//
-//        return false;
-//    }
 }
