@@ -27,6 +27,12 @@ class Client extends CApplicationComponent
     public $options = array();
 
     /**
+     * Sentry project URL
+     * @var string
+     */
+    public $projectUrl = '';
+
+    /**
      * If logging should be performed. This can be useful if running under
      * development/staging
      * @var boolean
@@ -97,5 +103,14 @@ class Client extends CApplicationComponent
     public function getLastEventId()
     {
         return $this->sentry->getLastEventID();
+    }
+
+    /**
+     * Return the last captured event's URL
+     * @return string
+     */
+    public function getLastEventUrl()
+    {
+        return sprintf('%s/?query=%s', rtrim($this->projectUrl, '/'), $this->sentry->getLastEventID());
     }
 }
