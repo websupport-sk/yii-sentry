@@ -11,7 +11,10 @@ composer require websupport/yii-sentry
 
 ## Configuration
 
-To your application's config add following:
+Add following to your application's config:
+
+### PHP error reporting
+
 
 ```php
 'components' => array(
@@ -20,16 +23,26 @@ To your application's config add following:
         'routes' => array(
             // your other log routers
             array(
-                'class' => 'Tatarko\\YiiSentry\\LogRoute',
+                'class' => 'Websupport\\YiiSentry\\LogRoute',
                 'levels' => E_ALL,
                 'enabled' => !YII_DEBUG,
             ),
         ),
     ),
     'sentry' => array(
-        'class' => 'Tatarko\\YiiSentry\\Client',
+        'class' => 'Websupport\\YiiSentry\\Client',
         'dsn' => '', // Your's DSN from Sentry
     ),
-    'preload' => array('sentry'),
 )
 ```
+
+### JS error reporting
+
+```php
+'preload' => array('sentryJavascript),
+'components' => array(
+    'sentryJavascript' => array(
+        'class' => 'Websupport\\YiiSentry\\Js\\Client',
+        'dsn' => '', // Your's DSN from Sentry
+    ),
+)
