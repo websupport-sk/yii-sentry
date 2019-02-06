@@ -41,13 +41,13 @@ Add following to your application's config:
 ```php
 'preload' => array('sentryJavascript),
 'components' => array(
-    'sentryJavascript' => array(
-        'class' => 'Websupport\\YiiSentry\\Js\\Client',
-        'dsn' => '', // Your's DSN from Sentry
+    'sentry' => array(
+        'class' => 'Websupport\\YiiSentry\\Client',
+        'jsDsn' => '', // Your's DSN from Sentry
     ),
 )
 ```
 
 #### Sending user context to JS
-`Websupport\\YiiSentry\\Js\\Client` component has public method: `setUSerContext($context)` which will send `$context` to Raven JS instance.
+`Websupport\\YiiSentry\\Client` component has public method: `setJsUserContext($context)` which will send `$context` to Raven JS instance.
 You can call this method multiple times from any part of the system. Recommended way however is to use it in `CWebUser` class right after init.
