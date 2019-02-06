@@ -46,3 +46,8 @@ Add following to your application's config:
         'dsn' => '', // Your's DSN from Sentry
     ),
 )
+```
+
+#### Sending user context to JS
+`Websupport\\YiiSentry\\Js\\Client` component has public method: `setUSerContext($context)` which will send `$context` to Raven JS instance.
+You can call this method multiple times from any part of the system. Recommended way however is to use it in `CWebUser` class right after init.

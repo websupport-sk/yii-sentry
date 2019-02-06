@@ -4,6 +4,7 @@ namespace Websupport\YiiSentry\Js;
 use Yii;
 use CClientScript;
 use CApplicationComponent;
+use CMap;
 
 class Client extends CApplicationComponent
 {
@@ -26,12 +27,7 @@ class Client extends CApplicationComponent
      */
     public $scriptUrl = "https://cdn.ravenjs.com/3.26.2/raven.min.js";
 
-    /**
-     * User context for tracking current user
-     * @var array
-     * @see https://docs.sentry.io/clients/javascript/usage/#tracking-users
-     */
-    public $userContext = array();
+    private $userContext = array();
 
     public function init()
     {
@@ -40,6 +36,20 @@ class Client extends CApplicationComponent
         $this->initializeDefaults();
 
         $this->installTracking();
+    }
+    /**
+     * User context for tracking current user
+     * @param array $context
+     * @see https://docs.sentry.io/clients/javascript/usage/#tracking-users
+     */
+    public function setUserContext($context)
+    {
+        $this->userContext = CMap::mergeArray($this->userContext, $context);
+        $userContext = \CJavaScript::encode($this->userContext);
+        Yii::app()->clientScript->registerScript(
+            'sentry-javascript-user',
+            "Raven.setUserContext({$userContext});"
+        );
     }
 
     private function initializeDefaults()
@@ -71,12 +81,11 @@ class Client extends CApplicationComponent
         );
 
         $options = \CJavaScript::encode($this->options);
-        $userContext = \CJavaScript::encode($this->userContext);
 
-        $trackingScript = <<<RAVEN
-    Raven.config('{$this->dsn}', {$options}).install();
-    Raven.setUserContext({$userContext});
-RAVEN;
-        $clientScript->registerScript('sentry-javascript', $trackingScript);
+        $clientScript->registerScript(
+            'sentry-javascript-init',
+            "Raven.config('{$this->dsn}', {$options}).install();",
+            CClientScript::POS_HEAD
+        );
     }
 }
