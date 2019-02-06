@@ -39,7 +39,7 @@ Add following to your application's config:
 ### JS error reporting
 
 ```php
-'preload' => array('sentryJavascript),
+'preload' => array('sentry'),
 'components' => array(
     'sentry' => array(
         'class' => 'Websupport\\YiiSentry\\Client',
