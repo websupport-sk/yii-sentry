@@ -83,7 +83,7 @@ class Client extends CApplicationComponent
     {
         parent::init();
 
-        if (!empty($this->dns)) {
+        if (!empty($this->dsn)) {
             $this->installPhpErrorReporting();
         }
 
