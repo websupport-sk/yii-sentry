@@ -147,7 +147,7 @@ class Client extends CApplicationComponent
      */
     public function setJsUserContext($context)
     {
-        $this->userContext = CMap::mergeArray($this->jsUserContext, $context);
+        $this->jsUserContext = CMap::mergeArray($this->jsUserContext, $context);
         $userContext = CJavaScript::encode($this->jsUserContext);
         Yii::app()->clientScript->registerScript(
             'sentry-javascript-user',
@@ -196,7 +196,7 @@ class Client extends CApplicationComponent
 
         $clientScript->registerScript(
             'sentry-javascript-init',
-            "Raven.config('{$this->dsn}', {$options}).install();",
+            "Raven.config('{$this->jsDsn}', {$options}).install();",
             CClientScript::POS_HEAD
         );
     }
