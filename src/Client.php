@@ -173,7 +173,7 @@ class Client extends CApplicationComponent
         $clientScript = Yii::app()->clientScript;
 
         $clientScript->registerScriptFile(
-            $this->scriptUrl,
+            $this->jsScriptUrl,
             CClientScript::POS_HEAD,
             array('crossorigin' => 'anonymous')
         );
