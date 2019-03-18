@@ -1,5 +1,5 @@
 <?php
-g
+
 namespace Websupport\YiiSentry;
 
 use CLogRoute;
