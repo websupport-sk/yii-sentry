@@ -1,8 +1,10 @@
 <?php
-
+g
 namespace Websupport\YiiSentry;
 
 use CLogRoute;
+use Sentry\Severity;
+use Sentry\State\Scope;
 use Yii;
 
 class LogRoute extends CLogRoute
@@ -46,25 +48,21 @@ class LogRoute extends CLogRoute
              * @var string $message
              * @var string $level
              * @var string $category
-             * @var float $timestamp
              */
-            list($message, $level, $category, $timestamp) = $log;
+            list($message, $level, $category) = $log;
 
             // remove stack trace from message
             if (($pos = strpos($message, 'Stack trace:')) !== false) {
                 $message = substr($message, 0, $pos);
             }
 
+            $scope = new Scope();
+            $scope->setExtra('category', $category);
+
             $this->eventId = $this->client->captureMessage(
                 $message,
-                [],
-                [
-                    'level' => $level,
-                    'timestamp' => $timestamp,
-                    'extra' => [
-                        'category' => $category,
-                    ],
-                ]
+                new Severity($level),
+                $scope
             );
         }
     }

@@ -4,6 +4,7 @@ namespace Websupport\YiiSentry;
 
 use Sentry\Severity;
 use Sentry\State\Hub;
+use Sentry\State\Scope;
 use Yii;
 use CMap;
 use CApplicationComponent;
@@ -81,40 +82,30 @@ class Client extends CApplicationComponent
     }
 
     /**
-     * Captures a message event and sends it to Sentry.
+     * Logs a message.
      *
-     * @param string   $message The message
-     * @param Severity $level   The severity level of the message
+     * @param string     $message The message (primary description) for the event
+     * @param Severity   $level   The level of the message to be sent
+     * @param Scope|null $scope   An optional scope keeping the state
      *
      * @return string|null
      */
-    public function captureMessage(string $message, ?Severity $level = null): ?string
+    public function captureMessage(string $message, ?Severity $level = null, ?Scope $scope = null): ?string
     {
-        return \Sentry\captureMessage($message, $level);
+        return Hub::getCurrent()->getClient()->captureMessage($message, $level, $scope);
     }
 
     /**
-     * Captures an exception event and sends it to Sentry.
+     * Logs an exception.
      *
-     * @param \Throwable $exception The exception
-     *
-     * @return string|null
-     */
-    public function captureException(\Throwable $exception): ?string
-    {
-        return \Sentry\captureException($exception);
-    }
-
-    /**
-     * Captures a new event using the provided data.
-     *
-     * @param array $payload The data of the event being captured
+     * @param \Throwable $exception The exception object
+     * @param Scope|null $scope     An optional scope keeping the state
      *
      * @return string|null
      */
-    public function captureEvent(array $payload): ?string
+    public function captureException(\Throwable $exception, ?Scope $scope = null): ?string
     {
-        return \Sentry\captureEvent($payload);
+        return Hub::getCurrent()->getClient()->captureException($exception, $scope);
     }
 
     /**
