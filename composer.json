@@ -1,7 +1,13 @@
 {
     "name": "websupport/yii-sentry",
     "description": "Layer for Yii framework for communication with Sentry logging API",
-    "keywords": ["yii", "sentry", "api", "logging"],
+    "keywords": [
+        "yii",
+        "sentry",
+        "api",
+        "logging"
+    ],
+    "license": "MIT",
     "require": {
         "php": "^7.2",
         "sentry/sdk": "^2.0.0"
@@ -9,7 +15,6 @@
     "require-dev": {
         "yiisoft/yii": "dev-master as 1.1.x-dev"
     },
-    "license": "MIT",
     "autoload": {
         "psr-4": {
             "Websupport\\YiiSentry\\": "src/"
