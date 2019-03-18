@@ -57,14 +57,14 @@ class LogRoute extends CLogRoute
 
             $this->eventId = $this->client->captureMessage(
                 $message,
-                array(),
-                array(
+                [],
+                [
                     'level' => $level,
                     'timestamp' => $timestamp,
-                    'extra' => array(
+                    'extra' => [
                         'category' => $category,
-                    ),
-                )
+                    ],
+                ]
             );
         }
     }

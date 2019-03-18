@@ -3,11 +3,11 @@
     "description": "Layer for Yii framework for communication with Sentry logging API",
     "keywords": ["yii", "sentry", "api", "logging"],
     "require": {
-        "php": ">=5.3",
-        "sentry/sentry": "^1.9"
+        "php": "^7.2",
+        "sentry/sdk": "^2.0.0"
     },
     "require-dev": {
-        "yiisoft/yii": "^1.1.20"
+        "yiisoft/yii": "dev-master as 1.1.x-dev"
     },
     "license": "MIT",
     "autoload": {

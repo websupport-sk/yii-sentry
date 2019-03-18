@@ -2,13 +2,13 @@
 
 namespace Websupport\YiiSentry;
 
+use Sentry\Severity;
+use Sentry\State\Hub;
 use Yii;
 use CMap;
 use CApplicationComponent;
 use CClientScript;
 use CJavaScript;
-use Raven_Client;
-use Raven_ErrorHandler;
 
 /**
  * Class Client
@@ -29,7 +29,7 @@ class Client extends CApplicationComponent
      * @see https://docs.sentry.io/clients/php/config/
      * @see https://docs.sentry.io/clients/javascript/config/
      */
-    public $options = array();
+    public $options = [];
 
     /**
      * Sentry project URL
@@ -57,22 +57,10 @@ class Client extends CApplicationComponent
     public $jsDsn;
 
     /**
-     * Stored sentry client connection
-     * @var \Raven_Client
-     */
-    private $sentry;
-
-    /**
-     * Sentry error handler
-     * @var Raven_ErrorHandler
-     */
-    private $errorHandler;
-
-    /**
      * user context for JS error reporting
      * @var array
      */
-    private $jsUserContext = array();
+    private $jsUserContext = [];
 
     /**
      * Initializes the SentryClient component.
@@ -93,32 +81,40 @@ class Client extends CApplicationComponent
     }
 
     /**
-     * Log a message to sentry
+     * Captures a message event and sends it to Sentry.
      *
-     * @param string     $message The message (primary description) for the event.
-     * @param array      $params  params to use when formatting the message.
-     * @param array      $data    Additional attributes to pass with this event (see Sentry docs).
-     * @param bool|array $stack
-     * @param mixed      $vars
+     * @param string   $message The message
+     * @param Severity $level   The severity level of the message
+     *
      * @return string|null
      */
-    public function captureMessage($message, $params = array(), $data = array(), $stack = false, $vars = null)
+    public function captureMessage(string $message, ?Severity $level = null): ?string
     {
-        return $this->sentry->captureMessage($message, $params, $data, $stack, $vars);
+        return \Sentry\captureMessage($message, $level);
     }
 
     /**
-     * Log an exception to sentry
+     * Captures an exception event and sends it to Sentry.
      *
-     * @param \Throwable|\Exception $exception The Throwable/Exception object.
-     * @param array                 $data      Additional attributes to pass with this event (see Sentry docs).
-     * @param mixed                 $logger
-     * @param mixed                 $vars
+     * @param \Throwable $exception The exception
+     *
      * @return string|null
      */
-    public function captureException($exception, $data = null, $logger = null, $vars = null)
+    public function captureException(\Throwable $exception): ?string
     {
-        return $this->sentry->captureException($exception, $data, $logger, $vars);
+        return \Sentry\captureException($exception);
+    }
+
+    /**
+     * Captures a new event using the provided data.
+     *
+     * @param array $payload The data of the event being captured
+     *
+     * @return string|null
+     */
+    public function captureEvent(array $payload): ?string
+    {
+        return \Sentry\captureEvent($payload);
     }
 
     /**
@@ -128,7 +124,7 @@ class Client extends CApplicationComponent
      */
     public function getLastEventId()
     {
-        return $this->sentry->getLastEventID();
+        return Hub::getCurrent()->getLastEventId();
     }
 
     /**
@@ -137,7 +133,7 @@ class Client extends CApplicationComponent
      */
     public function getLastEventUrl()
     {
-        return sprintf('%s/?query=%s', rtrim($this->projectUrl, '/'), $this->sentry->getLastEventID());
+        return sprintf('%s/?query=%s', rtrim($this->projectUrl, '/'), $this->getLastEventId());
     }
 
     /**
@@ -157,11 +153,7 @@ class Client extends CApplicationComponent
 
     private function installPhpErrorReporting()
     {
-        $this->sentry = new Raven_Client($this->dsn, $this->options);
-        $this->errorHandler = new Raven_ErrorHandler($this->sentry);
-        $this->errorHandler->registerErrorHandler(true, ~error_reporting());
-        $this->errorHandler->registerExceptionHandler(true);
-        $this->errorHandler->registerShutdownFunction();
+        \Sentry\init(array_merge(['dsn' => $this->dsn], $this->options));
     }
 
     /**
@@ -175,7 +167,7 @@ class Client extends CApplicationComponent
         $clientScript->registerScriptFile(
             $this->jsScriptUrl,
             CClientScript::POS_HEAD,
-            array('crossorigin' => 'anonymous')
+            ['crossorigin' => 'anonymous']
         );
 
         $options = $this->options;

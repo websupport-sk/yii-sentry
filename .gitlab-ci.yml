@@ -1,0 +1,28 @@
+stages:
+  - lint
+
+#  Lint
+# ==============================
+lint:composer:
+  stage: lint
+  image: registry.websupport.sk/devel/docker/php-qa:latest
+  tags:
+    - docker-dind
+  script:
+    - composer normalize --dry-run
+
+lint:phpcs:
+  stage: lint
+  image: registry.websupport.sk/devel/docker/php-qa:latest
+  tags:
+    - docker-dind
+  script:
+    - phpcs src
+
+lint:php-compatibility:
+  stage: lint
+  image: registry.websupport.sk/devel/docker/php-qa:latest
+  tags:
+    - docker-dind
+  script:
+    - phpcs --standard=PHPCompatibility --runtime-set testVersion 7.2- --extensions=php src
