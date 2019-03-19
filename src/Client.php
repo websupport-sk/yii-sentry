@@ -142,7 +142,7 @@ class Client extends CApplicationComponent
         );
     }
 
-    private function installPhpErrorReporting()
+    private function installPhpErrorReporting() : void
     {
         \Sentry\init(array_merge(['dsn' => $this->dsn], $this->options));
 
@@ -164,13 +164,12 @@ class Client extends CApplicationComponent
 
             $scope->setUser($user);
         });
-
     }
 
     /**
      * @throws \CException
      */
-    private function installJsErrorReporting()
+    private function installJsErrorReporting() : void
     {
         /** @var \CClientScript $clientScript */
         $clientScript = Yii::app()->clientScript;
