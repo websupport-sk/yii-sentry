@@ -58,10 +58,10 @@ class Client extends CApplicationComponent
     public $jsDsn;
 
     /**
-     * user context for JS error reporting
+     * user context for error reporting
      * @var array
      */
-    private $jsUserContext = [];
+    private $userContext = [];
 
     /**
      * Initializes the SentryClient component.
@@ -131,11 +131,18 @@ class Client extends CApplicationComponent
      * User context for tracking current user
      * @param array $context
      * @see https://docs.sentry.io/clients/javascript/usage/#tracking-users
+     * @see https://docs.sentry.io/enriching-error-data/context/?platform=php#capturing-the-user
      */
-    public function setJsUserContext($context)
+    public function setUserContext($context)
     {
-        $this->jsUserContext = CMap::mergeArray($this->jsUserContext, $context);
-        $userContext = CJavaScript::encode($this->jsUserContext);
+        $this->userContext = CMap::mergeArray($this->userContext, $context);
+
+        \Sentry\configureScope(function (Scope $scope): void {
+            $user = array_merge($this->userContext, $this->getInitialPhpUserContext());
+            $scope->setUser($user);
+        });
+
+        $userContext = CJavaScript::encode($this->userContext);
         Yii::app()->clientScript->registerScript(
             'sentry-javascript-user',
             "Raven.setUserContext({$userContext});"
@@ -147,21 +154,25 @@ class Client extends CApplicationComponent
         \Sentry\init(array_merge(['dsn' => $this->dsn], $this->options));
 
         \Sentry\configureScope(function (Scope $scope): void {
-            if (!function_exists('session_id') || !session_id()) {
-                return;
-            }
-            $user = [
-                'id' => session_id(),
-            ];
-            if (!empty($_SERVER['REMOTE_ADDR'])) {
-                $user['ip_address'] = $_SERVER['REMOTE_ADDR'];
-            }
-            if (!empty($_SESSION)) {
-                $user['data'] = $_SESSION;
-            }
-
-            $scope->setUser($user);
+            $scope->setUser($this->getInitialPhpUserContext());
         });
+    }
+
+    private function getInitialPhpUserContext(): array
+    {
+        if (!function_exists('session_id') || !session_id()) {
+            return [];
+        }
+        $user = [
+            'session_id' => session_id(),
+        ];
+        if (!empty($_SERVER['REMOTE_ADDR'])) {
+            $user['ip_address'] = $_SERVER['REMOTE_ADDR'];
+        }
+        if (!empty($_SESSION)) {
+            $user['data'] = $_SESSION;
+        }
+        return $user;
     }
 
     /**
