@@ -163,14 +163,13 @@ class Client extends CApplicationComponent
         if (!function_exists('session_id') || !session_id()) {
             return [];
         }
-        $user = [
-            'session_id' => session_id(),
-        ];
-        if (!empty($_SERVER['REMOTE_ADDR'])) {
-            $user['ip_address'] = $_SERVER['REMOTE_ADDR'];
-        }
+        $user = [];
         if (!empty($_SESSION)) {
             $user['data'] = $_SESSION;
+        }
+        $user['session_id'] = session_id();
+        if (!empty($_SERVER['REMOTE_ADDR'])) {
+            $user['ip_address'] = $_SERVER['REMOTE_ADDR'];
         }
         return $user;
     }
