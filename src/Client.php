@@ -147,19 +147,17 @@ class Client extends CApplicationComponent
         \Sentry\init(array_merge(['dsn' => $this->dsn], $this->options));
 
         \Sentry\configureScope(function (Scope $scope): void {
-            $user = [];
-
+            if (!function_exists('session_id') || !session_id()) {
+                return;
+            }
+            $user = [
+                'id' => session_id(),
+            ];
             if (!empty($_SERVER['REMOTE_ADDR'])) {
                 $user['ip_address'] = $_SERVER['REMOTE_ADDR'];
             }
-
-            if (Yii::app()->getComponent('session') && Yii::app()->session->isStarted) {
-                $user['session_data'] = Yii::app()->session->toArray();
-
-                if (Yii::app()->getComponent('user')) {
-                    $user['id'] = Yii::app()->user->id;
-                    $user['username'] = Yii::app()->user->name;
-                }
+            if (!empty($_SESSION)) {
+                $user['data'] = $_SESSION;
             }
 
             $scope->setUser($user);
