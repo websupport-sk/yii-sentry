@@ -153,13 +153,13 @@ class Client extends CApplicationComponent
                 $user['ip_address'] = $_SERVER['REMOTE_ADDR'];
             }
 
-            if (Yii::app()->getComponent('user')) {
-                $user['id'] = Yii::app()->user->id;
-                $user['username'] = Yii::app()->user->name;
-            }
-
-            if (Yii::app()->getComponent('session')) {
+            if (Yii::app()->getComponent('session') && Yii::app()->session->isStarted) {
                 $user['session_data'] = Yii::app()->session->toArray();
+
+                if (Yii::app()->getComponent('user')) {
+                    $user['id'] = Yii::app()->user->id;
+                    $user['username'] = Yii::app()->user->name;
+                }
             }
 
             $scope->setUser($user);
