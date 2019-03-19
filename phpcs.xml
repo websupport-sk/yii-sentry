@@ -13,7 +13,6 @@
     <arg value="p" />
 
     <!-- Include whole PSR-2 standard -->
-    <rule ref="PSR1" />
     <rule ref="PSR2" />
 
 </ruleset>
