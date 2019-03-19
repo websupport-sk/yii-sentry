@@ -145,6 +145,26 @@ class Client extends CApplicationComponent
     private function installPhpErrorReporting()
     {
         \Sentry\init(array_merge(['dsn' => $this->dsn], $this->options));
+
+        \Sentry\configureScope(function (Scope $scope): void {
+            $user = [];
+
+            if (!empty($_SERVER['REMOTE_ADDR'])) {
+                $user['ip_address'] = $_SERVER['REMOTE_ADDR'];
+            }
+
+            if (Yii::app()->getComponent('user')) {
+                $user['id'] = Yii::app()->user->id;
+                $user['username'] = Yii::app()->user->name;
+            }
+
+            if (Yii::app()->getComponent('session')) {
+                $user['session_data'] = Yii::app()->session->toArray();
+            }
+
+            $scope->setUser($user);
+        });
+
     }
 
     /**
