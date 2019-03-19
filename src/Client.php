@@ -137,11 +137,13 @@ class Client extends CApplicationComponent
     {
         $this->userContext = CMap::mergeArray($this->userContext, $context);
 
+        // Set user context for PHP client
         \Sentry\configureScope(function (Scope $scope): void {
             $user = array_merge($this->userContext, $this->getInitialPhpUserContext());
             $scope->setUser($user);
         });
 
+        // Set user context for JS client
         $userContext = CJavaScript::encode($this->userContext);
         Yii::app()->clientScript->registerScript(
             'sentry-javascript-user',
@@ -165,7 +167,7 @@ class Client extends CApplicationComponent
         }
         $user = [];
         if (!empty($_SESSION)) {
-            $user['data'] = $_SESSION;
+            $user = $_SESSION;
         }
         $user['session_id'] = session_id();
         if (!empty($_SERVER['REMOTE_ADDR'])) {
