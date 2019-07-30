@@ -2,7 +2,6 @@
 
 namespace Websupport\YiiSentry;
 
-use Sentry\Event;
 use Sentry\Severity;
 use Sentry\State\Hub;
 use Sentry\State\Scope;
@@ -67,6 +66,9 @@ class Client extends CApplicationComponent
      */
     private $userContext = [];
 
+    /** @var \Websupport\OpenTracing\OpenTracing */
+    private $opentracing;
+
     /**
      * Initializes the SentryClient component.
      * @return void
@@ -83,6 +85,10 @@ class Client extends CApplicationComponent
         if ($this->isJsErrorReportingEnabled()) {
             $this->installJsErrorReporting();
         }
+
+        if ($this->opentracingId && Yii::app()->hasComponent($this->opentracingId)) {
+            $this->opentracing = Yii::app()->getComponent($this->opentracingId);
+        }
     }
 
     /**
@@ -96,6 +102,9 @@ class Client extends CApplicationComponent
      */
     public function captureMessage(string $message, ?Severity $level = null, ?Scope $scope = null): ?string
     {
+        if ($scope !== null) {
+            $this->injectOpenTracingIntoScope($scope);
+        }
         return Hub::getCurrent()->getClient()->captureMessage($message, $level, $scope);
     }
 
@@ -109,7 +118,21 @@ class Client extends CApplicationComponent
      */
     public function captureException(\Throwable $exception, ?Scope $scope = null): ?string
     {
+        if ($scope !== null) {
+            $this->injectOpenTracingIntoScope($scope);
+        }
         return Hub::getCurrent()->getClient()->captureException($exception, $scope);
+    }
+
+    private function injectOpenTracingIntoScope(Scope &$scope)
+    {
+        if ($this->opentracing) {
+            $spanContext = $this->opentracing->getTracer()->getActiveSpan()->getContext();
+            if ($spanContext instanceof \Jaeger\SpanContext) {
+                $scope->setTag('opentracing.trace_id', $spanContext->getTraceId());
+                $scope->setTag('opentracing.span_id', $spanContext->getSpanId());
+            }
+        }
     }
 
     /**
@@ -161,39 +184,11 @@ class Client extends CApplicationComponent
 
     private function installPhpErrorReporting() : void
     {
-        $options = $this->options;
-
-        $this->injectOpentracingBeforeSendCallback($options);
-
-        \Sentry\init(array_merge(['dsn' => $this->dsn], $options));
+        \Sentry\init(array_merge(['dsn' => $this->dsn], $this->options));
 
         \Sentry\configureScope(function (Scope $scope): void {
             $scope->setUser($this->getInitialPhpUserContext());
         });
-    }
-
-    private function injectOpentracingBeforeSendCallback(array &$options):void
-    {
-        if ($this->opentracingId && Yii::app()->hasComponent($this->opentracingId)) {
-            $opentracing = Yii::app()->getComponent($this->opentracingId);
-            $originalCallback = $options['before_send'] ?? null;
-            $options['before_send'] = function (Event $event) use($opentracing, $originalCallback): ?Event {
-                $spanContext = $opentracing->getTracer()->getActiveSpan()->getContext();
-
-                if ($spanContext instanceof \Jaeger\SpanContext) {
-                    $event->getTagsContext()->setData([
-                        'opentracing.trace_id' => $spanContext->getTraceId(),
-                        'opentracing.span_id' => $spanContext->getSpanId()
-                    ]);
-                }
-
-                if (is_callable($originalCallback)) {
-                    return $originalCallback($event);
-                }
-
-                return $event;
-            };
-        }
     }
 
     private function getInitialPhpUserContext(): array
