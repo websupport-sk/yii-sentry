@@ -57,17 +57,11 @@ class Client extends CApplicationComponent
      */
     public $jsDsn;
 
-    /** @var string opentracing component Id */
-    public $opentracingId;
-
     /**
      * user context for error reporting
      * @var array
      */
     private $userContext = [];
-
-    /** @var \Websupport\OpenTracing\OpenTracing */
-    private $opentracing;
 
     /**
      * Initializes the SentryClient component.
@@ -85,10 +79,6 @@ class Client extends CApplicationComponent
         if ($this->isJsErrorReportingEnabled()) {
             $this->installJsErrorReporting();
         }
-
-        if ($this->opentracingId && Yii::app()->hasComponent($this->opentracingId)) {
-            $this->opentracing = Yii::app()->getComponent($this->opentracingId);
-        }
     }
 
     /**
@@ -102,9 +92,6 @@ class Client extends CApplicationComponent
      */
     public function captureMessage(string $message, ?Severity $level = null, ?Scope $scope = null): ?string
     {
-        if ($scope !== null) {
-            $this->injectOpenTracingIntoScope($scope);
-        }
         return Hub::getCurrent()->getClient()->captureMessage($message, $level, $scope);
     }
 
@@ -118,21 +105,7 @@ class Client extends CApplicationComponent
      */
     public function captureException(\Throwable $exception, ?Scope $scope = null): ?string
     {
-        if ($scope !== null) {
-            $this->injectOpenTracingIntoScope($scope);
-        }
         return Hub::getCurrent()->getClient()->captureException($exception, $scope);
-    }
-
-    private function injectOpenTracingIntoScope(Scope &$scope)
-    {
-        if ($this->opentracing) {
-            $spanContext = $this->opentracing->getTracer()->getActiveSpan()->getContext();
-            if ($spanContext instanceof \Jaeger\SpanContext) {
-                $scope->setTag('opentracing.trace_id', $spanContext->getTraceId());
-                $scope->setTag('opentracing.span_id', $spanContext->getSpanId());
-            }
-        }
     }
 
     /**
