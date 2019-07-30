@@ -15,7 +15,6 @@ Add following to your application's config:
 
 ### PHP error reporting
 
-
 ```php
 'components' => [
     'log' => [
@@ -34,6 +33,24 @@ Add following to your application's config:
         'dsn' => '', // Your's DSN from Sentry
     ],
 )
+```
+
+#### Adding OpenTracing data to Event Context
+There is a possibility to store Trace Id and Span Id for trace, when some error occurred.
+For this, you need to have installed also [websupport/yii-opentracing](https://github.com/websupport-sk/yii-opentracing).
+
+```php
+    'components' => [
+        'sentry' => [
+            'class' => \Websupport\YiiSentry\Client::class
+            'opentracingId' => 'sentry' // or name of your yii-opentracing component
+            ...
+        ],
+        'opentracing' => [ // yii-opentracing component
+            'class' => \Websupport\OpenTracing\JaegerOpenTracing::class,
+            ...
+        ]
+    ],
 ```
 
 ### JS error reporting
