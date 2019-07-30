@@ -6,7 +6,7 @@
         "yii",
         "yii1",
         "sentry",
-        "log",
+        "log"
     ],
     "license": "BSD-3-Clause",
     "require": {
