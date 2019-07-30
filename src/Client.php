@@ -72,11 +72,11 @@ class Client extends CApplicationComponent
     {
         parent::init();
 
-        if (!empty($this->dsn)) {
+        if ($this->isPhpErrorReportingEnabled()) {
             $this->installPhpErrorReporting();
         }
 
-        if (!empty($this->jsDsn)) {
+        if ($this->isJsErrorReportingEnabled()) {
             $this->installJsErrorReporting();
         }
     }
@@ -138,17 +138,21 @@ class Client extends CApplicationComponent
         $this->userContext = CMap::mergeArray($this->userContext, $context);
 
         // Set user context for PHP client
-        \Sentry\configureScope(function (Scope $scope): void {
-            $user = array_merge($this->userContext, $this->getInitialPhpUserContext());
-            $scope->setUser($user);
-        });
+        if ($this->isPhpErrorReportingEnabled()) {
+            \Sentry\configureScope(function (Scope $scope): void {
+                $user = array_merge($this->userContext, $this->getInitialPhpUserContext());
+                $scope->setUser($user);
+            });
+        }
 
         // Set user context for JS client
-        $userContext = CJavaScript::encode($this->userContext);
-        Yii::app()->clientScript->registerScript(
-            'sentry-javascript-user',
-            "Raven.setUserContext({$userContext});"
-        );
+        if ($this->isJsErrorReportingEnabled()) {
+            $userContext = CJavaScript::encode($this->userContext);
+            Yii::app()->clientScript->registerScript(
+                'sentry-javascript-user',
+                "Raven.setUserContext({$userContext});"
+            );
+        }
     }
 
     private function installPhpErrorReporting() : void
@@ -211,5 +215,15 @@ class Client extends CApplicationComponent
             "Raven.config('{$this->jsDsn}', {$options}).install();",
             CClientScript::POS_HEAD
         );
+    }
+
+    private function isPhpErrorReportingEnabled(): bool
+    {
+        return !empty($this->dsn);
+    }
+
+    private function isJsErrorReportingEnabled(): bool
+    {
+        return !empty($this->jsDsn);
     }
 }
