@@ -1,5 +1,5 @@
 # Yii Sentry extension
-Layer for Yii framework for communication with Sentry logging API
+Logging Extension for Yii framework for communication with Sentry logging API
 
 ## Installation
 
