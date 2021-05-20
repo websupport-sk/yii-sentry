@@ -2,8 +2,8 @@
 
 namespace Websupport\YiiSentry;
 
+use Sentry\SentrySdk;
 use Sentry\Severity;
-use Sentry\State\Hub;
 use Sentry\State\Scope;
 use Yii;
 use CMap;
@@ -92,7 +92,7 @@ class Client extends CApplicationComponent
      */
     public function captureMessage(string $message, ?Severity $level = null, ?Scope $scope = null): ?string
     {
-        return Hub::getCurrent()->getClient()->captureMessage($message, $level, $scope);
+        return SentrySdk::getCurrentHub()->getClient()->captureMessage($message, $level, $scope);
     }
 
     /**
@@ -105,7 +105,7 @@ class Client extends CApplicationComponent
      */
     public function captureException(\Throwable $exception, ?Scope $scope = null): ?string
     {
-        return Hub::getCurrent()->getClient()->captureException($exception, $scope);
+        return SentrySdk::getCurrentHub()->getClient()->captureException($exception, $scope);
     }
 
     /**
@@ -115,7 +115,7 @@ class Client extends CApplicationComponent
      */
     public function getLastEventId()
     {
-        return Hub::getCurrent()->getLastEventId();
+        return SentrySdk::getCurrentHub()->getLastEventId();
     }
 
     /**
