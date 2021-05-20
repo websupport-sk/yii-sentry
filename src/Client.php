@@ -4,7 +4,6 @@ namespace Websupport\YiiSentry;
 
 use Sentry\SentrySdk;
 use Sentry\Severity;
-use Sentry\State\Hub;
 use Sentry\State\Scope;
 use Yii;
 use CMap;
