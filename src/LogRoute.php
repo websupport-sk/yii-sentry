@@ -48,7 +48,7 @@ class LogRoute extends CLogRoute
         // sentry is calling is_callable() method which will ends in YiiBase::autoload
         spl_autoload_unregister(array('YiiBase', 'autoload'));
 
-	foreach ($logs as $log) {
+        foreach ($logs as $log) {
             /**
              * @var string $message
              * @var string $level
