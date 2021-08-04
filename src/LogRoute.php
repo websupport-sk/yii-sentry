@@ -43,6 +43,11 @@ class LogRoute extends CLogRoute
      */
     protected function processLogs($logs)
     {
+
+        // hack to disable yii autoloader
+        // sentry is calling is_callable() method which will ends in YiiBase::autoload
+        spl_autoload_unregister(array('YiiBase', 'autoload'));
+
         foreach ($logs as $log) {
             /**
              * @var string $message
