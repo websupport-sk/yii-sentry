@@ -49,7 +49,7 @@ class Client extends CApplicationComponent
      * Url of Sentry reporting JS file
      * @var string
      */
-    public $jsScriptUrl = "https://cdn.ravenjs.com/3.26.2/raven.min.js";
+    public $jsScriptUrl = "https://browser.sentry-cdn.com/6.11.0/bundle.tracing.min.js";
 
     /**
      * Sentry DSN value
@@ -148,10 +148,10 @@ class Client extends CApplicationComponent
         // Set user context for JS client
         if ($this->isJsErrorReportingEnabled()) {
             $userContext = CJavaScript::encode($this->userContext);
-            Yii::app()->clientScript->registerScript(
-                'sentry-javascript-user',
-                "Raven.setUserContext({$userContext});"
-            );
+//            Yii::app()->clientScript->registerScript(
+//                'sentry-javascript-user',
+//                "Raven.setUserContext({$userContext});"
+//            );
         }
     }
 
@@ -213,6 +213,18 @@ class Client extends CApplicationComponent
         $clientScript->registerScript(
             'sentry-javascript-init',
             "Raven.config('{$this->jsDsn}', {$options}).install();",
+            CClientScript::POS_HEAD
+        );
+        $clientScript->registerScript(
+            'sentry-javascript-init',
+            "Sentry.init({
+			  dsn: \"{$this->jsDsn}\",
+			  // this assumes your build process sets \"npm_package_version\" in the env
+			  integrations: [new Sentry.Integrations.BrowserTracing()],
+			  // We recommend adjusting this value in production, or using tracesSampler
+			  // for finer control
+			  tracesSampleRate: 1.0,
+			});",
             CClientScript::POS_HEAD
         );
     }
