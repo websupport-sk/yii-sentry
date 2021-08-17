@@ -1,5 +1,5 @@
 {
-    "name": "websupport/yii-sentry",
+    "name": "digizijn/yii-sentry",
     "type": "yii-extension",
     "description": "Layer for Yii framework for communication with Sentry logging API",
     "keywords": [
@@ -29,7 +29,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Websupport\\YiiSentry\\": "src/"
+            "Digizijn\\YiiSentry\\": "src/"
         }
     }
 }
