@@ -1,6 +1,6 @@
 <?php
 
-namespace Websupport\YiiSentry;
+namespace Digizijn\YiiSentry;
 
 use Sentry\Severity;
 use Sentry\State\Hub;
