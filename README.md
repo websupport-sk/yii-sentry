@@ -6,7 +6,7 @@ Logging Extension for Yii framework for communication with Sentry logging API
 **Yii Sentry** is composer library so you can install the latest version with:
 
 ```shell
-composer require websupport/yii-sentry
+composer require digizijn/yii-sentry
 ```
 
 ## Configuration
