@@ -223,7 +223,7 @@ class Client extends CApplicationComponent
 			  integrations: [new Sentry.Integrations.BrowserTracing()],
 			  // We recommend adjusting this value in production, or using tracesSampler
 			  // for finer control
-			  tracesSampleRate: 0.1,
+			  tracesSampleRate: 0.0,
 			});",
             CClientScript::POS_HEAD
         );
