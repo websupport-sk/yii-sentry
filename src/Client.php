@@ -2,14 +2,21 @@
 
 namespace Websupport\YiiSentry;
 
-use Sentry\Severity;
-use Sentry\State\Hub;
-use Sentry\State\Scope;
-use Yii;
-use CMap;
 use CApplicationComponent;
 use CClientScript;
+use CEvent;
 use CJavaScript;
+use CMap;
+use Sentry\Severity;
+use Sentry\State\HubAdapter;
+use Sentry\State\HubInterface;
+use Sentry\State\Scope;
+use Sentry\Tracing\Span;
+use Sentry\Tracing\SpanContext;
+use Sentry\Tracing\Transaction;
+use Sentry\Tracing\TransactionContext;
+use Throwable;
+use Yii;
 
 /**
  * Class Client
@@ -58,10 +65,22 @@ class Client extends CApplicationComponent
     public $jsDsn;
 
     /**
+     * Enable Sentry tracing
+     * https://docs.sentry.io/product/sentry-basics/tracing/distributed-tracing/
+     * @var bool
+     */
+    public $tracing = false;
+
+    /**
      * user context for error reporting
      * @var array
      */
     private $userContext = [];
+
+    /** @var Transaction|null  */
+    private $rootTransaction = null;
+    /** @var Span|null  */
+    private $appSpan = null;
 
     /**
      * Initializes the SentryClient component.
@@ -79,6 +98,10 @@ class Client extends CApplicationComponent
         if ($this->isJsErrorReportingEnabled()) {
             $this->installJsErrorReporting();
         }
+
+        if ($this->isTracingEnabled()) {
+            $this->attachEventHandlers();
+        }
     }
 
     /**
@@ -92,20 +115,20 @@ class Client extends CApplicationComponent
      */
     public function captureMessage(string $message, ?Severity $level = null, ?Scope $scope = null): ?string
     {
-        return Hub::getCurrent()->getClient()->captureMessage($message, $level, $scope);
+        return $this->getSentry()->getClient()->captureMessage($message, $level, $scope);
     }
 
     /**
      * Logs an exception.
      *
-     * @param \Throwable $exception The exception object
+     * @param Throwable $exception The exception object
      * @param Scope|null $scope     An optional scope keeping the state
      *
      * @return string|null
      */
     public function captureException(\Throwable $exception, ?Scope $scope = null): ?string
     {
-        return Hub::getCurrent()->getClient()->captureException($exception, $scope);
+        return $this->getSentry()->getClient()->captureException($exception, $scope);
     }
 
     /**
@@ -115,7 +138,7 @@ class Client extends CApplicationComponent
      */
     public function getLastEventId()
     {
-        return Hub::getCurrent()->getLastEventId();
+        return $this->getSentry()->getLastEventId();
     }
 
     /**
@@ -139,7 +162,7 @@ class Client extends CApplicationComponent
 
         // Set user context for PHP client
         if ($this->isPhpErrorReportingEnabled()) {
-            \Sentry\configureScope(function (Scope $scope): void {
+            HubAdapter::getInstance()->configureScope(function (Scope $scope): void {
                 $user = array_merge($this->userContext, $this->getInitialPhpUserContext());
                 $scope->setUser($user);
             });
@@ -155,11 +178,16 @@ class Client extends CApplicationComponent
         }
     }
 
+    private function getSentry(): HubInterface
+    {
+        return HubAdapter::getInstance();
+    }
+
     private function installPhpErrorReporting() : void
     {
         \Sentry\init(array_merge(['dsn' => $this->dsn], $this->options));
 
-        \Sentry\configureScope(function (Scope $scope): void {
+        $this->getSentry()->configureScope(function (Scope $scope): void {
             $scope->setUser($this->getInitialPhpUserContext());
         });
     }
@@ -217,6 +245,15 @@ class Client extends CApplicationComponent
         );
     }
 
+    /**
+     * @throws \CException
+     */
+    protected function attachEventHandlers(): void
+    {
+        Yii::app()->attachEventHandler('onBeginRequest', [$this, 'handleBeginRequestEvent']);
+        Yii::app()->attachEventHandler('onEndRequest', [$this, 'handleEndRequestEvent']);
+    }
+
     private function isPhpErrorReportingEnabled(): bool
     {
         return !empty($this->dsn);
@@ -226,4 +263,115 @@ class Client extends CApplicationComponent
     {
         return !empty($this->jsDsn);
     }
+
+    private function isTracingEnabled(): bool
+    {
+        return $this->tracing === true;
+    }
+
+    //region Events
+
+    /**
+     * @param \CEvent $event
+     */
+    public function handleBeginRequestEvent(\CEvent $event): void
+    {
+        $name = $this->operationNameFromBeginRequestEvent($event);
+        $this->rootTransaction = $this->startRootTransaction($name, []);
+        $this->getSentry()->setSpan($this->rootTransaction);
+
+        $appContextStart = new SpanContext();
+        $appContextStart->setOp('app.handle');
+        $appContextStart->setDescription($name);
+        $appContextStart->setStartTimestamp(microtime(true));
+        $appContextStart->setData(
+            $this->spanDataFromBeginRequestEvent($event)
+        );
+        $this->appSpan = $this->rootTransaction->startChild($appContextStart);
+    }
+
+    /**
+     * @param \CEvent $event
+     */
+    public function handleEndRequestEvent(\CEvent $event): void
+    {
+        if ($this->appSpan !== null) {
+            $this->appSpan->finish();
+        }
+
+        if ($this->rootTransaction !== null) {
+            $this->rootTransaction->finish();
+        }
+    }
+
+    /**
+     * @param string[]|int[]|bool[] $data
+     */
+    public function startRootTransaction(string $description, array $data = []): Transaction
+    {
+        if (!isset($data['component'])) {
+            $data['component'] = 'yii-sentrytracing';
+        }
+
+        $context = new TransactionContext();
+        $context->setOp('yii-app');
+        $context->setName($description);
+        $context->setDescription($description);
+        $context->setData($data);
+
+        return $this->getSentry()->startTransaction($context);
+    }
+
+    /**
+     * @return string[]
+     */
+    private function spanDataFromBeginRequestEvent(CEvent $event): array
+    {
+        $application = $event->sender;
+        assert($application instanceof \CApplication);
+
+        $data = [
+            'component' => get_class($application),
+        ];
+
+        // Add HTTP related tags
+        if ($application instanceof \CWebApplication) {
+            try {
+                $requestUri = $application->request->getRequestUri();
+            } catch (\CException $exception) {
+                $requestUri = '';
+            }
+
+            $data['http.method'] = $application->request->getRequestType();
+            $data['http.url'] = sprintf(
+                '%s%s',
+                $application->request->getHostInfo(),
+                $requestUri
+            );
+            $data['http.host'] = parse_url($application->request->getUrl(), PHP_URL_HOST);
+            $data['http.uri'] = $requestUri;
+        }
+
+        return $data;
+    }
+
+    private function operationNameFromBeginRequestEvent(CEvent $event): string
+    {
+        $application = $event->sender;
+        assert($application instanceof \CApplication);
+
+        if ($application instanceof \CConsoleApplication) {
+            // phpcs:disable SlevomatCodingStandard.Files.LineLength.LineTooLong
+            // phpcs:disable SlevomatCodingStandard.Variables.DisallowSuperGlobalVariable.DisallowedSuperGlobalVariable
+            return implode(' ', $_SERVER['argv']);
+        }
+
+        if ($application instanceof \CWebApplication) {
+            return strtolower($application->getUrlManager()->parseUrl($application->request));
+        }
+
+        return 'yii-app';
+    }
+
+    //endregion
 }
