@@ -65,13 +65,6 @@ class Client extends CApplicationComponent
     public $jsDsn;
 
     /**
-     * Enable Sentry tracing
-     * https://docs.sentry.io/product/sentry-basics/tracing/distributed-tracing/
-     * @var bool
-     */
-    public $tracing = false;
-
-    /**
      * user context for error reporting
      * @var array
      */
@@ -128,6 +121,7 @@ class Client extends CApplicationComponent
      */
     public function captureException(\Throwable $exception, ?Scope $scope = null): ?string
     {
+        $this->rootTransaction->setHttpStatus(500);
         return $this->getSentry()->getClient()->captureException($exception, $scope);
     }
 
@@ -252,6 +246,8 @@ class Client extends CApplicationComponent
     {
         Yii::app()->attachEventHandler('onBeginRequest', [$this, 'handleBeginRequestEvent']);
         Yii::app()->attachEventHandler('onEndRequest', [$this, 'handleEndRequestEvent']);
+        Yii::app()->attachEventHandler('onException', [$this, 'handleExceptionEvent']);
+        Yii::app()->attachEventHandler('onError', [$this, 'handleExceptionEvent']);
     }
 
     private function isPhpErrorReportingEnabled(): bool
@@ -266,7 +262,7 @@ class Client extends CApplicationComponent
 
     private function isTracingEnabled(): bool
     {
-        return $this->tracing === true;
+        return isset($this->options['traces_sampler']);
     }
 
     //region Events
@@ -300,8 +296,16 @@ class Client extends CApplicationComponent
         }
 
         if ($this->rootTransaction !== null) {
+            if ($this->rootTransaction->getStatus() === null) {
+                $this->rootTransaction->setHttpStatus(200);
+            }
             $this->rootTransaction->finish();
         }
+    }
+
+    public function handleExceptionEvent(\CEvent $event): void
+    {
+        $this->rootTransaction->setHttpStatus(500);
     }
 
     /**
@@ -309,10 +313,6 @@ class Client extends CApplicationComponent
      */
     public function startRootTransaction(string $description, array $data = []): Transaction
     {
-        if (!isset($data['component'])) {
-            $data['component'] = 'yii-sentrytracing';
-        }
-
         $context = new TransactionContext();
         $context->setOp('yii-app');
         $context->setName($description);
