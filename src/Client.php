@@ -307,6 +307,8 @@ class Client extends CApplicationComponent
      */
     public function handleEndRequestEvent(\CEvent $event): void
     {
+        $this->grabPushLogsFromLoggerToBreadcrumbs();
+
         if ($this->appSpan !== null) {
             $this->appSpan->finish();
         }
@@ -321,6 +323,8 @@ class Client extends CApplicationComponent
 
     public function handleExceptionEvent(\CEvent $event): void
     {
+        $this->grabPushLogsFromLoggerToBreadcrumbs();
+
         if ($this->rootTransaction !== null) {
             $this->rootTransaction->setHttpStatus(500);
         }
@@ -329,7 +333,7 @@ class Client extends CApplicationComponent
     /**
      * @param string[]|int[]|bool[] $data
      */
-    public function startRootTransaction(string $description, array $data = []): Transaction
+    private function startRootTransaction(string $description, array $data = []): Transaction
     {
         $context = new TransactionContext();
         $context->setOp('yii-app');
@@ -392,4 +396,28 @@ class Client extends CApplicationComponent
     }
 
     //endregion
+    private function grabPushLogsFromLoggerToBreadcrumbs(): void
+    {
+        $logs = Yii::getLogger()->getLogs();
+
+        foreach ($logs as $log) {
+            /**
+             * @var string $message
+             * @var string $level
+             * @var string $category
+             */
+            list($message, $level, $category) = $log;
+
+            // remove stack trace from message
+            if (($pos = strpos($message, 'Stack trace:')) !== false) {
+                $message = substr($message, 0, $pos);
+            }
+
+            if ($level === 'trace') {
+                $level = Breadcrumb::LEVEL_DEBUG;
+            }
+
+            $this->addBreadcrumb($level, Breadcrumb::TYPE_DEFAULT, $category, $message);
+        }
+    }
 }
