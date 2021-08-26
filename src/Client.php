@@ -7,6 +7,7 @@ use CClientScript;
 use CEvent;
 use CJavaScript;
 use CMap;
+use Sentry\Breadcrumb;
 use Sentry\Severity;
 use Sentry\State\HubAdapter;
 use Sentry\State\HubInterface;
@@ -111,6 +112,19 @@ class Client extends CApplicationComponent
         return $this->getSentry()->getClient()->captureMessage($message, $level, $scope);
     }
 
+    public function addBreadcrumb(
+        string $level,
+        string $type,
+        string $category,
+        ?string $message = null,
+        array $metadata = [],
+        ?float $timestamp = null
+    ): bool {
+        return $this->getSentry()->addBreadcrumb(
+            new Breadcrumb($level, $type, $category, $message, $metadata, $timestamp)
+        );
+    }
+
     /**
      * Logs an exception.
      *
@@ -121,7 +135,9 @@ class Client extends CApplicationComponent
      */
     public function captureException(\Throwable $exception, ?Scope $scope = null): ?string
     {
-        $this->rootTransaction->setHttpStatus(500);
+        if ($this->rootTransaction !== null) {
+            $this->rootTransaction->setHttpStatus(500);
+        }
         return $this->getSentry()->getClient()->captureException($exception, $scope);
     }
 
@@ -305,7 +321,9 @@ class Client extends CApplicationComponent
 
     public function handleExceptionEvent(\CEvent $event): void
     {
-        $this->rootTransaction->setHttpStatus(500);
+        if ($this->rootTransaction !== null) {
+            $this->rootTransaction->setHttpStatus(500);
+        }
     }
 
     /**
