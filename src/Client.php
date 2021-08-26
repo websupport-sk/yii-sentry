@@ -7,6 +7,7 @@ use CClientScript;
 use CEvent;
 use CJavaScript;
 use CMap;
+use Sentry\Breadcrumb;
 use Sentry\Severity;
 use Sentry\State\HubAdapter;
 use Sentry\State\HubInterface;
@@ -113,6 +114,19 @@ class Client extends CApplicationComponent
         }
 
         return $this->getSentry()->getClient()->captureMessage($message, $level, $scope);
+    }
+
+    public function addBreadcrumb(
+        string $level,
+        string $type,
+        string $category,
+        ?string $message = null,
+        array $metadata = [],
+        ?float $timestamp = null
+    ): bool {
+        return $this->getSentry()->addBreadcrumb(
+            new Breadcrumb($level, $type, $category, $message, $metadata, $timestamp)
+        );
     }
 
     /**
@@ -302,6 +316,8 @@ class Client extends CApplicationComponent
      */
     public function handleEndRequestEvent(\CEvent $event): void
     {
+        $this->grabPushLogsFromLoggerToBreadcrumbs();
+
         if ($this->appSpan !== null) {
             $this->appSpan->finish();
         }
@@ -316,13 +332,17 @@ class Client extends CApplicationComponent
 
     public function handleExceptionEvent(\CEvent $event): void
     {
-        $this->rootTransaction->setHttpStatus(500);
+        $this->grabPushLogsFromLoggerToBreadcrumbs();
+
+        if ($this->rootTransaction !== null) {
+            $this->rootTransaction->setHttpStatus(500);
+        }
     }
 
     /**
      * @param string[]|int[]|bool[] $data
      */
-    public function startRootTransaction(string $description, array $data = []): Transaction
+    private function startRootTransaction(string $description, array $data = []): Transaction
     {
         $context = new TransactionContext();
         $context->setOp('yii-app');
@@ -385,4 +405,28 @@ class Client extends CApplicationComponent
     }
 
     //endregion
+    private function grabPushLogsFromLoggerToBreadcrumbs(): void
+    {
+        $logs = Yii::getLogger()->getLogs();
+
+        foreach ($logs as $log) {
+            /**
+             * @var string $message
+             * @var string $level
+             * @var string $category
+             */
+            list($message, $level, $category) = $log;
+
+            // remove stack trace from message
+            if (($pos = strpos($message, 'Stack trace:')) !== false) {
+                $message = substr($message, 0, $pos);
+            }
+
+            if ($level === 'trace') {
+                $level = Breadcrumb::LEVEL_DEBUG;
+            }
+
+            $this->addBreadcrumb($level, Breadcrumb::TYPE_DEFAULT, $category, $message);
+        }
+    }
 }
