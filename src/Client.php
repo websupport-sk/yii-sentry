@@ -109,6 +109,10 @@ class Client extends CApplicationComponent
      */
     public function captureMessage(string $message, ?Severity $level = null, ?Scope $scope = null): ?string
     {
+        if ($this->getSentry()->getClient() === null) {
+            return null;
+        }
+
         return $this->getSentry()->getClient()->captureMessage($message, $level, $scope);
     }
 
@@ -138,6 +142,11 @@ class Client extends CApplicationComponent
         if ($this->rootTransaction !== null) {
             $this->rootTransaction->setHttpStatus(500);
         }
+
+        if ($this->getSentry()->getClient() === null) {
+            return null;
+        }
+
         return $this->getSentry()->getClient()->captureException($exception, $scope);
     }
 
