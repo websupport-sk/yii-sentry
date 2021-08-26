@@ -422,7 +422,13 @@ class Client extends CApplicationComponent
                 $message = substr($message, 0, $pos);
             }
 
-            if ($level === 'trace') {
+            if (!in_array($level, [
+                Breadcrumb::LEVEL_DEBUG,
+                Breadcrumb::LEVEL_INFO,
+                Breadcrumb::LEVEL_WARNING,
+                Breadcrumb::LEVEL_ERROR,
+                Breadcrumb::LEVEL_FATAL,
+            ], true)) {
                 $level = Breadcrumb::LEVEL_DEBUG;
             }
 
