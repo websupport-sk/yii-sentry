@@ -45,6 +45,8 @@ class Client extends CApplicationComponent
      */
     public $enabled = true;
 
+    public $excluded_exceptions = [];
+	
     /**
      * Url of Sentry reporting JS file
      * @var string
