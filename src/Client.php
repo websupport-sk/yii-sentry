@@ -87,6 +87,10 @@ class Client extends CApplicationComponent
     {
         parent::init();
 
+		if(array_key_exists('excluded_exceptions', $this->options)){
+			unset($this->options['excluded_exceptions']);
+		}
+
         if ($this->isPhpErrorReportingEnabled()) {
             $this->installPhpErrorReporting();
         }
