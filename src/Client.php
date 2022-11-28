@@ -59,7 +59,7 @@ class Client extends CApplicationComponent
      * Url of Sentry reporting JS file
      * @var string
      */
-    public $jsScriptUrl = "https://browser.sentry-cdn.com/6.11.0/bundle.tracing.min.js";
+    public $jsScriptUrl = "https://browser.sentry-cdn.com/7.21.1/bundle.tracing.min.js";
 
     /**
      * Sentry DSN value
