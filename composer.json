@@ -11,7 +11,7 @@
     "license": "BSD-3-Clause",
     "require": {
         "php": ">=7.1",
-        "guzzlehttp/psr7": "^1.6",
+        "guzzlehttp/psr7": "^1.6 || ^2.0",
         "php-http/curl-client": "^2.0",
         "yiisoft/yii": "^1.1.18",
         "sentry/sdk": "^3.1"
@@ -20,7 +20,7 @@
         "yiisoft/yii2": "*"
     },
     "require-dev": {
-        "roave/security-advisories": "dev-master"
+        "roave/security-advisories": "dev-latest"
     },
     "extra": {
         "branch-alias": {
@@ -30,6 +30,11 @@
     "autoload": {
         "psr-4": {
             "Websupport\\YiiSentry\\": "src/"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "php-http/discovery": false
         }
     }
 }
