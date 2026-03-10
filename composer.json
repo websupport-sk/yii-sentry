@@ -11,7 +11,7 @@
     "license": "BSD-3-Clause",
     "require": {
         "php": ">=7.1",
-        "guzzlehttp/psr7": "^1.6",
+         "guzzlehttp/psr7": "^1.6 || ^2.6",
         "php-http/curl-client": "^2.0",
         "yiisoft/yii": "^1.1.18",
         "sentry/sdk": "^3.1"
